@@ -6,6 +6,7 @@ object RegexResolve {
     forPattern(pattern).andThen(_.map(_.mkString("")))
   }
 
-  def forPattern(pattern: String): CharSequence => Option[List[String]] = pattern.r.unapplySeq(_: CharSequence)
+  def forPattern(pattern: String): CharSequence => Option[List[String]] =
+    pattern.r.unapplySeq(_: CharSequence)
 
 }

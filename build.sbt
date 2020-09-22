@@ -7,7 +7,7 @@ ThisBuild / scalaVersion := "2.13.3"
 val projectName = "migration"
 val username = "aaronp"
 val scalaTwelve = "2.12.10"
-val scalaThirteen = "2.13.0"
+val scalaThirteen = "2.13.3"
 val defaultScalaVersion = scalaThirteen
 
 name := projectName
@@ -40,7 +40,7 @@ libraryDependencies ++= List(
   "dev.zio" %% "zio-test-junit" % "1.0.1" % "test"
 )
 
-testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework"))
+testFrameworks += (new TestFramework("zio.test.sbt.ZTestFramework"))
 
 addArtifact(Artifact(projectName, "assembly"),
             sbtassembly.AssemblyKeys.assembly)
@@ -54,7 +54,6 @@ releaseCrossBuild := true
 coverageMinimum := 90
 coverageFailOnMinimum := true
 git.remoteRepo := s"git@github.com:$username/migration.git"
-ghpagesNoJekyll := true
 releasePublishArtifactsAction := PgpKeys.publishSigned.value
 publishConfiguration := publishConfiguration.value.withOverwrite(true)
 publishLocalConfiguration := publishLocalConfiguration.value.withOverwrite(true)

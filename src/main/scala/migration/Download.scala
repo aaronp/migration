@@ -12,27 +12,29 @@ import scala.util.Try
 object Download {
 
   /**
-   *
-   * @param url                the index list URL (a url containing a plain text, newline separated list of files to download
-   * @param dest               the target directory
-   * @param acceptableStatuses the http status code to check
-   * @return a list of file names from the given url
-   */
+    *
+    * @param url                the index list URL (a url containing a plain text, newline separated list of files to download
+    * @param dest               the target directory
+    * @param acceptableStatuses the http status code to check
+    * @return a list of file names from the given url
+    */
   def indexFile(url: String,
-            dest: Path,
-            acceptableStatuses: Set[Int] = Set.empty): ZIO[Console, Throwable, List[String]] = {
+                dest: Path,
+                acceptableStatuses: Set[Int] = Set.empty)
+    : ZIO[Console, Throwable, List[String]] = {
     for {
       _ <- toFile(url, dest, acceptableStatuses)
-      fileList <- Task.effect(dest.text.linesIterator.map(_.trim).filterNot(_.isEmpty).toList)
+      fileList <- Task.effect(
+        dest.text.linesIterator.map(_.trim).filterNot(_.isEmpty).toList)
     } yield fileList
   }
 
   def toFile(url: String,
              dest: Path,
-             acceptableStatuses: Set[Int] = Set.empty) = {
+             acceptableStatuses: Set[Int] = Set.empty): ZIO[Console, Throwable, Path] = {
     plan(Download(url, dest, acceptableStatuses)).flatMap { actions =>
       ZIO.foreach(actions)(eval)
-    }.unit
+    }.map(_ => dest)
   }
 
   def debug(url: String, dest: Path) = {
@@ -48,28 +50,32 @@ object Download {
 
   private case class MkDir(dest: Path) extends Action
 
-  private case class Download(url: String, dest: Path, acceptableStatuses: Set[Int])
-    extends Action
+  private case class Download(url: String,
+                              dest: Path,
+                              acceptableStatuses: Set[Int])
+      extends Action
 
   private case class Log(message: String) extends Action
 
   private case class Fail(msg: String) extends Exception(msg) with Action
 
-  private def eval(action: Action): ZIO[Console, Throwable, Any] = action match {
-    case MkDir(dir) => Task.effect(dir.mkDirs())
-    case error@Fail(_) => Task.fail(error)
-    case Log(msg) => zio.console.putStr(msg)
-    case download@Download(_, _, _) => asTask(download)
-  }
+  private def eval(action: Action): ZIO[Console, Throwable, Any] =
+    action match {
+      case MkDir(dir)                   => Task.effect(dir.mkDirs())
+      case error @ Fail(_)              => Task.fail(error)
+      case Log(msg)                     => zio.console.putStr(msg)
+      case download @ Download(_, _, _) => asTask(download)
+    }
 
-  private def dryRun(action: Action): ZIO[Console, Throwable, Any] = action match {
-    case MkDir(dir) => putStr(s"mkdir -p ${dir}")
-    case Fail(msg) => putStr(s"echo '${msg}' && exit 1")
-    case Log(msg) => putStr(msg)
-    case Download(url, dest, ok) =>
-      putStr(
-        s"curl -o ${dest} $url && checkStatusIn ${ok.mkString("[", ",", "]")}")
-  }
+  private def dryRun(action: Action): ZIO[Console, Throwable, Any] =
+    action match {
+      case MkDir(dir) => putStr(s"mkdir -p ${dir}")
+      case Fail(msg)  => putStr(s"echo '${msg}' && exit 1")
+      case Log(msg)   => putStr(msg)
+      case Download(url, dest, ok) =>
+        putStr(
+          s"curl -o ${dest} $url && checkStatusIn ${ok.mkString("[", ",", "]")}")
+    }
 
   private def write(data: Bytes, dest: Path): Task[Path] = {
     val array = data.array
@@ -84,7 +90,7 @@ object Download {
     import download._
     Task.effect(requests.get(url)).flatMap { r =>
       if (acceptableStatuses.isEmpty || acceptableStatuses.contains(
-        r.statusCode)) {
+            r.statusCode)) {
         write(r.data, dest)
       } else {
         val body = Try("; body:" + new String(r.bytes).take(200)).getOrElse("")
@@ -96,9 +102,9 @@ object Download {
   }
 
   /**
-   * @param download the download to download
-   * @return a list of actions to perform for a given download
-   */
+    * @param download the download to download
+    * @return a list of actions to perform for a given download
+    */
   private def plan(download: Download): Task[Seq[Action]] = {
     //    def download: Download = Download(url, dest, acceptableStatuses)
     import download._

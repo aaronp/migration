@@ -34,17 +34,18 @@ object DownloadTest extends DefaultRunnableSpec {
           _ <- Task.effect(testDir.getParent.delete())
           output <- TestConsole.output
         } yield
-          assert(output)(equalTo(Vector(
-            s"# downloading http://foo to directory ${dirName}",
-            s"curl -o ${dirName}/test.txt http://foo && checkStatusIn []")))
+          assert(output)(
+            equalTo(
+              Vector(
+                s"# downloading http://foo to directory ${dirName}",
+                s"curl -o ${dirName}/test.txt http://foo && checkStatusIn []")))
       },
       testM("dry run: not download if the target file already exists") {
         for {
           testFile <- Task.effect(
             s"./target/download-${unique.incrementAndGet()}/exists.txt".asPath.text =
               "already exists")
-          _ <- Download.debug("http://foo",
-            testFile)
+          _ <- Download.debug("http://foo", testFile)
           _ <- Task.effect(testFile.getParent.delete())
           output <- TestConsole.output
         } yield
@@ -54,17 +55,15 @@ object DownloadTest extends DefaultRunnableSpec {
       testM("download a file to a particular location") {
         val url = "https://storage.googleapis.com/mygration/index.txt"
         for {
-          testFile <- Task.effect(s"./target/download-${unique.incrementAndGet()}/fileList.txt".asPath)
-          _ <- Download.toFile(url,
-            testFile,
-            acceptableStatuses = Set(200))
+          testFile <- Task.effect(
+            s"./target/download-${unique.incrementAndGet()}/fileList.txt".asPath)
+          _ <- Download.toFile(url, testFile, acceptableStatuses = Set(200))
           content <- Task.effect(testFile.text)
           _ <- Task.effect(testFile.getParent.delete())
           output <- TestConsole.output
         } yield {
           //          assert(output)(equalTo(Vector(s"# downloading $url to directory ${testFile.getParent}"))) &&
-          assert(content)(equalTo(
-            """backup-2.zip
+          assert(content)(equalTo("""backup-2.zip
               |backup-1.zip
               |backup-3.zip""".stripMargin))
         }
@@ -72,10 +71,10 @@ object DownloadTest extends DefaultRunnableSpec {
       testM("not download a file to a particular location if it already exists") {
         val url = "https://storage.googleapis.com/mygration/index.txt"
         for {
-          testFile <- Task.effect(s"./target/download-${unique.incrementAndGet()}/fileList.txt".asPath.text = "foo")
-          _ <- Download.toFile(url,
-            testFile,
-            acceptableStatuses = Set(200))
+          testFile <- Task.effect(
+            s"./target/download-${unique.incrementAndGet()}/fileList.txt".asPath.text =
+              "foo")
+          _ <- Download.toFile(url, testFile, acceptableStatuses = Set(200))
           content <- Task.effect(testFile.text)
           _ <- Task.effect(testFile.getParent.delete())
         } yield {
@@ -86,18 +85,19 @@ object DownloadTest extends DefaultRunnableSpec {
       testM("fail the download if the status code doesn't match") {
         val url = "https://storage.googleapis.com/mygration/index.txt"
         for {
-          testFile <- Task.effect(s"./target/download-${unique.incrementAndGet()}/fileList.txt".asPath)
-          downloadResult <- Download.toFile(url,
-            testFile,
-            acceptableStatuses = Set(201)).either
+          testFile <- Task.effect(
+            s"./target/download-${unique.incrementAndGet()}/fileList.txt".asPath)
+          downloadResult <- Download
+            .toFile(url, testFile, acceptableStatuses = Set(201))
+            .either
           fileExists <- Task.effect(testFile.exists())
           _ <- Task.effect(testFile.getParent.delete())
           output <- TestConsole.output
         } yield {
           assert(output)(equalTo(Vector())) &&
-            assert(fileExists)(equalTo(false)) &&
-            assert(downloadResult.fold(_.getMessage, _.toString))(equalTo(
-              s"""Download '$url' returned unexpected status code '200' OK; body:backup-2.zip
+          assert(fileExists)(equalTo(false)) &&
+          assert(downloadResult.fold(_.getMessage, _.toString))(equalTo(
+            s"""Download '$url' returned unexpected status code '200' OK; body:backup-2.zip
                  |backup-1.zip
                  |backup-3.zip""".stripMargin))
         }
