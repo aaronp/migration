@@ -13,10 +13,13 @@ object MainTest extends DefaultRunnableSpec {
         "dry run: try and create the parent directory if it doesn't already exist") {
         for {
           testDir <- Task.effect("./target/mainTest".asPath)
-          exitCode <- Main.run(List(s"dir=${testDir}"))
+          exitCode <- Main.run(List(s"dir=${testDir}", "pattern=\\2@@@\\1", "regex=f(.)le(.+)\\.xml"))
 //          _ <- Task.effect(testDir.delete())
           output <- TestConsole.output
-        } yield
+        } yield {
+          println("v" * 120)
+          output.foreach(println)
+          println("^" * 120)
           assert(output)(equalTo(Vector(
             """Running with
               |     URL : https://storage.googleapis.com/mygration
@@ -24,6 +27,8 @@ object MainTest extends DefaultRunnableSpec {
               |  dryRun : false
               |""".stripMargin,
             "curl -o ./target/downloads/test.txt someurl && checkStatusIn []")))
+
+        }
       })
   }
 }

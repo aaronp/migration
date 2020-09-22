@@ -18,7 +18,10 @@ object Extract {
     zio.console.putStr(s"Processing $index: $url into $targetDirectory ")
     val zipUrl = if (url.endsWith("/")) s"$url$zipFileName" else s"$url/$zipFileName"
 
-    def unzip(zipFile: Path): Task[Path] = Task.fromTry(Unzip.to(zipFile, targetDirectory.resolve("data").mkDirs())(fileNameForEntry))
+    def unzip(zipFile: Path): Task[Path] = {
+      val paddedIndex = index.toString.reverse.padTo(4, '0').reverse
+      Task.fromTry(Unzip.to(zipFile, targetDirectory.resolve("data").resolve(s"${paddedIndex}-$zipFileName").mkDirs())(fileNameForEntry))
+    }
 
     for {
       zipFile <- Download.toFile(zipUrl, targetDirectory.resolve(zipFileName), acceptableStatusCodes)
