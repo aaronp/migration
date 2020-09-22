@@ -64,8 +64,9 @@ object DownloadTest extends DefaultRunnableSpec {
         } yield {
           //          assert(output)(equalTo(Vector(s"# downloading $url to directory ${testFile.getParent}"))) &&
           assert(content)(equalTo("""backup-2.zip
-              |backup-1.zip
-              |backup-3.zip""".stripMargin))
+                                    |backup-1.zip
+                                    |backup-3.zip
+                                    |backup-0.zip""".stripMargin))
         }
       },
       testM("not download a file to a particular location if it already exists") {
@@ -98,8 +99,9 @@ object DownloadTest extends DefaultRunnableSpec {
           assert(fileExists)(equalTo(false)) &&
           assert(downloadResult.fold(_.getMessage, _.toString))(equalTo(
             s"""Download '$url' returned unexpected status code '200' OK; body:backup-2.zip
-                 |backup-1.zip
-                 |backup-3.zip""".stripMargin))
+               |backup-1.zip
+               |backup-3.zip
+               |backup-0.zip""".stripMargin))
         }
       }
     )
