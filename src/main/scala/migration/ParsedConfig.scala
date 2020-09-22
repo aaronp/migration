@@ -6,6 +6,7 @@ import eie.io._
 
 class ParsedConfig(config: Config) {
 
+  val fileNameRegex = config.getString("fileNameRegex")
   val fileNamePattern = config.getString("fileNamePattern")
   val url = config.getString("url")
   val targetDirectory = config.getString("dir").asPath

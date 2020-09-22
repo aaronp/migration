@@ -38,12 +38,13 @@ object Extract {
    */
   def apply(config: ParsedConfig) = {
     import config._
-    val fileNameForEntry: String => String = config.fileNamePattern.trim match {
-      case "" => identity[String]
-      case pattern => {
-        val resolve = RegexResolve(pattern)
+    val fileNameForEntry: String => String = (config.fileNameRegex.trim, config.fileNamePattern.trim) match {
+      case ("","") => identity[String]
+      case (regex, pattern) => {
+        val resolve = RegexResolve.forPattern(regex)
         (fileName: String) => {
-          resolve(fileName).getOrElse(sys.error(s"file '$fileName' didn't match $pattern"))
+          val list: List[String] = resolve(fileName).getOrElse(sys.error(s"file '$fileName' didn't match $regex"))
+          RegexResolve.replace(fileName, list, pattern)
         }
       }
     }
