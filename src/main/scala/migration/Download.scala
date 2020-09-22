@@ -29,12 +29,13 @@ object Download {
     } yield fileList
   }
 
-  def toFile(url: String,
-             dest: Path,
-             acceptableStatuses: Set[Int] = Set.empty): ZIO[Console, Throwable, Path] = {
-    plan(Download(url, dest, acceptableStatuses)).flatMap { actions =>
-      ZIO.foreach(actions)(eval)
-    }.map(_ => dest)
+  def toFile(url: String, dest: Path, acceptableStatuses: Set[Int] = Set.empty)
+    : ZIO[Console, Throwable, Path] = {
+    plan(Download(url, dest, acceptableStatuses))
+      .flatMap { actions =>
+        ZIO.foreach(actions)(eval)
+      }
+      .map(_ => dest)
   }
 
   def debug(url: String, dest: Path) = {

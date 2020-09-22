@@ -16,50 +16,61 @@ object Extract {
               acceptableStatusCodes: Set[Int],
               fileNameForEntry: String => String) = {
     zio.console.putStr(s"Processing $index: $url into $targetDirectory ")
-    val zipUrl = if (url.endsWith("/")) s"$url$zipFileName" else s"$url/$zipFileName"
+    val zipUrl =
+      if (url.endsWith("/")) s"$url$zipFileName" else s"$url/$zipFileName"
 
     def unzip(zipFile: Path): Task[Path] = {
       val paddedIndex = index.toString.reverse.padTo(4, '0').reverse
-      Task.fromTry(Unzip.to(zipFile, targetDirectory.resolve("data").resolve(s"${paddedIndex}-$zipFileName").mkDirs())(fileNameForEntry))
+      Task.fromTry(
+        Unzip.to(zipFile,
+                 targetDirectory
+                   .resolve("data")
+                   .resolve(s"${paddedIndex}-$zipFileName")
+                   .mkDirs())(fileNameForEntry))
     }
 
     for {
-      zipFile <- Download.toFile(zipUrl, targetDirectory.resolve(zipFileName), acceptableStatusCodes)
+      zipFile <- Download.toFile(zipUrl,
+                                 targetDirectory.resolve(zipFileName),
+                                 acceptableStatusCodes)
       dataDir <- unzip(zipFile)
       errorMessages <- ValidateXml(dataDir)
     } yield UnzipResult(zipFile, dataDir, errorMessages)
   }
 
   /**
-   * The 'actually do this' application
-   *
-   * @param config
-   * @return
-   */
+    * The 'actually do this' application
+    *
+    * @param config
+    * @return
+    */
   def apply(config: ParsedConfig) = {
     import config._
-    val fileNameForEntry: String => String = (config.fileNameRegex.trim, config.fileNamePattern.trim) match {
-      case ("","") => identity[String]
-      case (regex, pattern) => {
-        val resolve = RegexResolve.forPattern(regex)
-        (fileName: String) => {
-          val list: List[String] = resolve(fileName).getOrElse(sys.error(s"file '$fileName' didn't match $regex"))
-          RegexResolve.replace(fileName, list, pattern)
+    val fileNameForEntry: String => String =
+      (config.fileNameRegex.trim, config.fileNamePattern.trim) match {
+        case ("", "") => identity[String]
+        case (regex, pattern) => {
+          val resolve = RegexResolve.forPattern(regex)
+          (fileName: String) =>
+            {
+              val list: List[String] = resolve(fileName).getOrElse(
+                sys.error(s"file '$fileName' didn't match $regex"))
+              RegexResolve.replace(fileName, list, pattern)
+            }
         }
       }
-    }
 
     for {
       zipFilesNames <- Download.indexFile(indexURL,
-        targetDirectory.resolve("index.txt"))
+                                          targetDirectory.resolve("index.txt"))
       forks <- ZIO.foreach(zipFilesNames.zipWithIndex) {
         case (zipEntry, index) =>
           process(config.url,
-            targetDirectory,
-            index,
-            zipEntry,
-            checkDownloadStatus,
-            fileNameForEntry).fork
+                  targetDirectory,
+                  index,
+                  zipEntry,
+                  checkDownloadStatus,
+                  fileNameForEntry).fork
       }
       _ <- ZIO.foreach(forks.map(_.join))(identity)
     } yield ()

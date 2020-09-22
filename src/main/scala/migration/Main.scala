@@ -8,12 +8,12 @@ object Main extends zio.App {
   override def run(args: List[String]): URIO[zio.ZEnv, ExitCode] = {
     val config = args.toArray.asConfig()
     val appIO = config.showIfSpecified() match {
-      case None => apply(ParsedConfig(config))
+      case None        => apply(ParsedConfig(config))
       case Some(value) => ZIO.effect(println(value))
     }
 
     appIO.either.map {
-      case Left(_) => ExitCode.failure
+      case Left(_)  => ExitCode.failure
       case Right(_) => ExitCode.success
     }
   }

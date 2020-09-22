@@ -10,7 +10,7 @@ import scala.util.{Try, Using}
 object Unzip {
 
   def to(zip: Path, dest: Path)(
-    fileNameForEntry: String => String): Try[Path] = {
+      fileNameForEntry: String => String): Try[Path] = {
 
     val useZip: Try[Unit] =
       Using(new ZipInputStream(Files.newInputStream(zip))) {

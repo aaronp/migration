@@ -17,7 +17,8 @@ class ParsedConfig(config: Config) {
     .filterNot(_.trim.isEmpty)
     .map(_.toInt)
   val indexURL = config.getString("indexURL") match {
-    case "/index.txt" => if (url.endsWith("/")) s"${url}index.txt" else s"$url/index.txt"
+    case "/index.txt" =>
+      if (url.endsWith("/")) s"${url}index.txt" else s"$url/index.txt"
     case url => url
   }
 
@@ -34,4 +35,3 @@ class ParsedConfig(config: Config) {
 object ParsedConfig {
   def apply(config: Config) = new ParsedConfig(config)
 }
-

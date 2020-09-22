@@ -13,17 +13,22 @@ object ValidateXml {
     for {
       files <- Task.effect(dataDir.children.filter(_.isFile))
       lintErrorsFork <- Task.foreach(files.toSeq) { file =>
-        Task.effect(XML.loadFile(file.toFile)).either.map {
-          case Left(err) =>
-            println(s"${Thread.currentThread().getName} : $file is fucked")
-            Some(file -> err.getMessage)
-          case _ =>
+        Task
+          .effect(XML.loadFile(file.toFile))
+          .either
+          .map {
+            case Left(err) =>
+              println(s"${Thread.currentThread().getName} : $file is fucked")
+              Some(file -> err.getMessage)
+            case _ =>
 //            println(s"${Thread.currentThread().getName} : $file ok")
-            None
-        }.fork
+              None
+          }
+          .fork
       }
-      lintErrors: Seq[Option[(Path, String)]] <- Task.foreach(lintErrorsFork) { fiber =>
-        fiber.join
+      lintErrors: Seq[Option[(Path, String)]] <- Task.foreach(lintErrorsFork) {
+        fiber =>
+          fiber.join
       }
     } yield {
       lintErrors.collect {
