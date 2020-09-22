@@ -18,14 +18,21 @@ object Download {
    * @param acceptableStatuses the http status code to check
    * @return a list of file names from the given url
    */
-  def indexList(url: String,
-                dest: Path,
-                acceptableStatuses: Set[Int] = Set.empty): ZIO[Console, Throwable, List[String]] = {
+  def indexFile(url: String,
+            dest: Path,
+            acceptableStatuses: Set[Int] = Set.empty): ZIO[Console, Throwable, List[String]] = {
     for {
-      actions <- plan(Download(url, dest, acceptableStatuses))
-      _ <- ZIO.foreach(actions)(eval)
+      _ <- toFile(url, dest, acceptableStatuses)
       fileList <- Task.effect(dest.text.linesIterator.map(_.trim).filterNot(_.isEmpty).toList)
     } yield fileList
+  }
+
+  def toFile(url: String,
+             dest: Path,
+             acceptableStatuses: Set[Int] = Set.empty) = {
+    plan(Download(url, dest, acceptableStatuses)).flatMap { actions =>
+      ZIO.foreach(actions)(eval)
+    }.unit
   }
 
   def debug(url: String, dest: Path) = {

@@ -55,7 +55,7 @@ object DownloadTest extends DefaultRunnableSpec {
         val url = "https://storage.googleapis.com/mygration/index.txt"
         for {
           testFile <- Task.effect(s"./target/download-${unique.incrementAndGet()}/fileList.txt".asPath)
-          _ <- Download.indexList(url,
+          _ <- Download.toFile(url,
             testFile,
             acceptableStatuses = Set(200))
           content <- Task.effect(testFile.text)
@@ -73,7 +73,7 @@ object DownloadTest extends DefaultRunnableSpec {
         val url = "https://storage.googleapis.com/mygration/index.txt"
         for {
           testFile <- Task.effect(s"./target/download-${unique.incrementAndGet()}/fileList.txt".asPath.text = "foo")
-          _ <- Download.indexList(url,
+          _ <- Download.toFile(url,
             testFile,
             acceptableStatuses = Set(200))
           content <- Task.effect(testFile.text)
@@ -87,7 +87,7 @@ object DownloadTest extends DefaultRunnableSpec {
         val url = "https://storage.googleapis.com/mygration/index.txt"
         for {
           testFile <- Task.effect(s"./target/download-${unique.incrementAndGet()}/fileList.txt".asPath)
-          downloadResult <- Download.indexList(url,
+          downloadResult <- Download.toFile(url,
             testFile,
             acceptableStatuses = Set(201)).either
           fileExists <- Task.effect(testFile.exists())

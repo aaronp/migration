@@ -1,16 +1,19 @@
 package migration
 
+import java.nio.file.Path
+
 import args4c.implicits._
 import com.typesafe.config.Config
 import eie.io._
-import zio.{ExitCode, URIO, ZIO}
+import zio.console.Console
+import zio.{ExitCode, Fiber, URIO, ZIO}
 
 object Main extends zio.App {
 
   class ParsedConfig(config: Config) {
 
     val url = config.getString("url")
-    val dest = config.getString("dest")
+    val targetDirectory = config.getString("dest").asPath
     val dryRun = config.getBoolean("dryRun")
     val checkDownloadStatus = config.asList("checkDownloadStatus").toSet.filterNot(_.trim.isEmpty).map(_.toInt)
     val indexURL = config.getString("indexURL")
@@ -42,13 +45,32 @@ object Main extends zio.App {
 
   def debug(config: ParsedConfig) = {
     import config._
-    Download.debug(indexURL, dest.asPath)
+    Download.debug(indexURL, targetDirectory)
   }
 
+  def process(url: String, targetDirectory: Path, index: Int, zipEntry: String, acceptableStatusCodes: Set[Int]) = {
+    zio.console.putStr(s"Processing $index: $url into $targetDirectory ")
+    val zipUrl = if (url.endsWith("/")) s"$url$zipEntry" else s"$url/$zipEntry"
+    for {
+      zipFile <- Download.toFile(zipUrl, targetDirectory, acceptableStatusCodes)
+    } yield zipFile
+  }
+
+  /**
+   * The 'actually do this' application
+   *
+   * @param config
+   * @return
+   */
   def live(config: ParsedConfig) = {
     import config._
     for {
-      files <- Download.indexList(indexURL, dest.asPath)
+      zipFilesNames <- Download.indexFile(indexURL, targetDirectory.resolve("index.txt"))
+      forks <- ZIO.foreach(zipFilesNames.zipWithIndex) {
+        case (zipEntry, index) =>
+          process(config.url, targetDirectory, index, zipEntry, checkDownloadStatus).fork
+      }
+      _ <- ZIO.foreach(forks.map(_.join))(identity)
     } yield ()
   }
 
