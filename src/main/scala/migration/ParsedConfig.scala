@@ -30,7 +30,7 @@ class ParsedConfig(config: Config) {
 
   def indexFileName: String = indexURL match {
     case BaseNameR(base) => base
-    case other => other
+    case other           => other
   }
 
   override def toString: String = {

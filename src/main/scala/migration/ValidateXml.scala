@@ -18,11 +18,12 @@ object ValidateXml {
           .either
           .map {
             case Left(err) => Some(file -> err.getMessage)
-            case _ => None
+            case _         => None
           }
           .fork
       }
-      lintErrors: Seq[Option[(Path, String)]] <- Task.foreach(lintErrorsFork)(_.join)
+      lintErrors: Seq[Option[(Path, String)]] <- Task.foreach(lintErrorsFork)(
+        _.join)
     } yield {
       lintErrors.collect {
         case Some((path, msg)) => s"${dataDir.relativize(path)} : $msg"
