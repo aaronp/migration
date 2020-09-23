@@ -9,7 +9,9 @@ class ParsedConfig(config: Config) {
   val fileNameRegex = config.getString("fileNameRegex")
   val fileNamePattern = config.getString("fileNamePattern")
   val url = config.getString("url")
-  val targetDirectory = config.getString("dir").asPath
+  val baseDirectory = config.getString("dir").asPath
+  val dataDirectory = baseDirectory.resolve("data")
+  val downloadDirectory = baseDirectory.resolve("downloads")
   val dryRun = config.getBoolean("dryRun")
   val checkDownloadStatus = config
     .asList("checkDownloadStatus")
@@ -35,7 +37,7 @@ class ParsedConfig(config: Config) {
     s"""               URL : $url
        |          indexURL : $indexURL
        |            dryRun : $dryRun
-       |         directory : $targetDirectory
+       |         directory : $baseDirectory
        |  filename pattern : s|$fileNameRegex|$fileNamePattern|g""".stripMargin
   }
 }

@@ -20,7 +20,7 @@ object Main extends zio.App {
 
   def debug(config: ParsedConfig) = {
     import config._
-    Download.debug(indexURL, targetDirectory)
+    Download.debug(indexURL, downloadDirectory)
   }
 
   def apply(config: ParsedConfig) = {

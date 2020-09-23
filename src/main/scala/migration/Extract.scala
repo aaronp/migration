@@ -68,11 +68,12 @@ object Extract {
 
     for {
       zipFilesNames <- Download.indexFile(indexURL,
-        targetDirectory.resolve(indexFileName))
+        downloadDirectory.resolve(indexFileName))
       forks <- ZIO.foreach(zipFilesNames.zipWithIndex) {
         case (zipEntry, index) =>
           val forked: URIO[Console, Fiber.Runtime[Nothing, Either[Throwable, ValidationResult]]] = extractAndValidateEntry(config.url,
-            targetDirectory,
+            downloadDirectory,
+            dataDirectory,
             index,
             zipEntry,
             checkDownloadStatus,
@@ -89,12 +90,13 @@ object Extract {
   }
 
   private def extractAndValidateEntry(url: String,
-                                      targetDirectory: Path,
+                                      downloadDirectory: Path,
+                                      dataDirectory: Path,
                                       index: Int,
                                       zipFileName: String,
                                       acceptableStatusCodes: Set[Int],
                                       fileNameForEntry: String => Try[String]) = {
-    zio.console.putStr(s"Processing $index: $url into $targetDirectory ")
+    zio.console.putStr(s"Processing $index: $url into $dataDirectory ")
     val zipUrl =
       if (url.endsWith("/")) s"$url$zipFileName" else s"$url/$zipFileName"
 
@@ -102,8 +104,7 @@ object Extract {
       val paddedIndex = index.toString.reverse.padTo(4, '0').reverse
       Task.fromTry(
         Unzip.to(zipFile,
-          targetDirectory
-            .resolve("data")
+          dataDirectory
             .resolve(s"${paddedIndex}-$zipFileName")
             .mkDirs())(fileNameForEntry.andThen(_.get)))
     }
@@ -111,7 +112,7 @@ object Extract {
     for {
       _ <- putStrLn(s"# Downloading entry #$index : $zipUrl")
       zipFile <- Download.toFile(zipUrl,
-        targetDirectory.resolve(zipFileName),
+        downloadDirectory.resolve(zipFileName),
         acceptableStatusCodes)
       dataDir <- unzip(zipFile)
       errorMessages <- ValidateXml(dataDir)

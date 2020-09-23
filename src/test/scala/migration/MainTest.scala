@@ -31,7 +31,7 @@ object MainTest extends DefaultRunnableSpec {
         //          _ <- Task.effect(testDir.delete())
         output <- TestConsole.output
         extractedFileCount <- Task.effect(testDir.resolve("data/0000-small-valid.zip").children.filter(_.isFile).count(_.fileName.matches("[0-9][0-9][0-9]:AB_CD_.*")))
-        //_ <- Task.effect(testDir.getParent.getParent.delete())
+        _ <- Task.effect(testDir.getParent.getParent.delete())
       } yield {
         println("v" * 120)
         output.foreach(println)
@@ -46,9 +46,9 @@ object MainTest extends DefaultRunnableSpec {
                |  filename pattern : s|AB_CD_([0-9]{3,3})_([0-9]+).xml|$$1:$$0|g
                |""".stripMargin
           )) &&
-          assert(output)(contains(s"mkdir -p $testDir\n")) &&
+          assert(output)(contains(s"mkdir -p $testDir/downloads\n")) &&
           assert(extractedFileCount)(equalTo(21)) &&
-          assert(output)(contains(s"# downloading https://storage.googleapis.com/mygration/small-valid.zip to directory ${testDir}\n")) &&
+          assert(output)(contains(s"# downloading https://storage.googleapis.com/mygration/small-valid.zip to directory ${testDir}/downloads\n")) &&
           assert(exitCode)(equalTo(ExitCode.success))
       }
     })
