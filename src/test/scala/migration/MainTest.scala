@@ -41,10 +41,11 @@ object MainTest extends DefaultRunnableSpec {
                |          indexURL : https://storage.googleapis.com/mygration/small-valid.txt
                |            dryRun : false
                |         directory : ${testDir}
-               |  filename pattern : s|file(.+)\\.xml|$$2_$$0|g""".stripMargin
+               |  filename pattern : s|file(.+)\\.xml|$$2_$$0|g
+               |""".stripMargin
           )) &&
-          assert(output)(contains(s"mkdir -p $testDir")) &&
-          assert(output)(contains(s"# downloading https://storage.googleapis.com/mygration/small-valid.zip to directory ${testDir}")) &&
+          assert(output)(contains(s"mkdir -p $testDir\n")) &&
+          assert(output)(contains(s"# downloading https://storage.googleapis.com/mygration/small-valid.zip to directory ${testDir}\n")) &&
           //          assert(output)(contains(s"# downloading https://storage.googleapis.com/mygration/backup-0.zip to directory ${testDir}")) &&
           //          assert(output)(contains(s"# downloading https://storage.googleapis.com/mygration/backup-3.zip to directory ${testDir}")) &&
           //          assert(output)(contains(s"# downloading https://storage.googleapis.com/mygration/backup-1.zip to directory ${testDir}")) &&

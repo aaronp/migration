@@ -24,6 +24,13 @@ class ParsedConfig(config: Config) {
     case url => url
   }
 
+  private val BaseNameR = ".*/(.*)".r
+
+  def indexFileName: String = indexURL match {
+    case BaseNameR(base) => base
+    case other => other
+  }
+
   override def toString: String = {
     s"""               URL : $url
        |          indexURL : $indexURL
