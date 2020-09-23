@@ -23,8 +23,6 @@ libraryDependencies ++= List(
   "com.typesafe" % "config" % "1.3.4",
   "com.github.aaronp" %% "args4c" % "0.7.0",
   "com.lihaoyi" %% "requests" % "0.6.5",
-  "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
-  "ch.qos.logback" % "logback-classic" % "1.2.3",
   "dev.zio" %% "zio" % "1.0.1",
   "org.scala-lang.modules" %% "scala-xml" % "1.3.0",
   "com.github.aaronp" %% "eie" % "1.0.0"
