@@ -62,8 +62,8 @@ object Download {
 
   private def eval(action: Action): ZIO[Console, Throwable, Any] =
     action match {
-      case MkDir(dir)                   => Task.effect(dir.mkDirs())
-      case error @ Fail(_)              => Task.fail(error)
+      case MkDir(dir)                   => zio.console.putStr(s"mkdir -p ${dir}") *> Task.effect(dir.mkDirs())
+      case error @ Fail(_)              => zio.console.putStr(s"download failed with: ${error.msg}") *> Task.fail(error)
       case Log(msg)                     => zio.console.putStr(msg)
       case download @ Download(_, _, _) => asTask(download)
     }

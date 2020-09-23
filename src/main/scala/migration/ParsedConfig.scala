@@ -23,12 +23,11 @@ class ParsedConfig(config: Config) {
   }
 
   override def toString: String = {
-    s"""      URL : $url
-       | indexURL : $indexURL
-       |   dryRun : $dryRun
-       |directory : $targetDirectory
-       |  pattern : $fileNamePattern
-       |""".stripMargin
+    s"""               URL : $url
+       |          indexURL : $indexURL
+       |            dryRun : $dryRun
+       |         directory : $targetDirectory
+       |  filename pattern : s/$fileNameRegex/$fileNamePattern/g""".stripMargin
   }
 }
 

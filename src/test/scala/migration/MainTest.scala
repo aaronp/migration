@@ -3,15 +3,15 @@ package migration
 import eie.io._
 import zio.Task
 import zio.test.Assertion.equalTo
-import zio.test.environment.TestConsole
 import zio.test._
+import zio.test.environment.TestConsole
 
 object MainTest extends DefaultRunnableSpec {
   override def spec: ZSpec[_root_.zio.test.environment.TestEnvironment, Any] = {
-    suite("Download")(testM(
-      "dry run: try and create the parent directory if it doesn't already exist") {
+    suite("Main")(testM(
+      "report failed downloads") {
       for {
-        testDir <- Task.effect("./target/mainTest".asPath)
+        testDir <- Task.effect(s"./target/mainTest-${UniqueIds.next()}/data".asPath)
         exitCode <- Main.run(
           List(s"dir=${testDir}",
                "pattern=\\2@@@\\1",
@@ -24,11 +24,12 @@ object MainTest extends DefaultRunnableSpec {
         println("^" * 120)
         assert(output)(
           equalTo(Vector(
-            """Running with
-              |     URL : https://storage.googleapis.com/mygration
-              |indexURL : https://storage.googleapis.com/mygration/index.txt
-              |  dryRun : false
-              |""".stripMargin,
+            s"""Running with
+              |      URL : https://storage.googleapis.com/mygration
+              | indexURL : https://storage.googleapis.com/mygration/index.txt
+              |   dryRun : false
+              |directory : ${testDir}
+              |  pattern : s///g""".stripMargin,
             "curl -o ./target/downloads/test.txt someurl && checkStatusIn []"
           )))
 

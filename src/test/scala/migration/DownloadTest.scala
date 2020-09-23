@@ -9,7 +9,6 @@ import zio.test._
 import zio.test.environment.TestConsole
 
 object DownloadTest extends DefaultRunnableSpec {
-  val unique = new AtomicLong(System.currentTimeMillis())
 
   override def spec: ZSpec[_root_.zio.test.environment.TestEnvironment, Any] = {
     suite("Download")(
@@ -28,7 +27,7 @@ object DownloadTest extends DefaultRunnableSpec {
       testM("dry run: only download if the parent directory already exists") {
         for {
           dirName <- Task.effect(
-            s"./target/download-${unique.incrementAndGet()}")
+            s"./target/download-${UniqueIds.next()}")
           testDir <- Task.effect(dirName.asPath.mkDirs().resolve("test.txt"))
           _ <- Download.debug("http://foo", testDir)
           _ <- Task.effect(testDir.getParent.delete())
@@ -43,7 +42,7 @@ object DownloadTest extends DefaultRunnableSpec {
       testM("dry run: not download if the target file already exists") {
         for {
           testFile <- Task.effect(
-            s"./target/download-${unique.incrementAndGet()}/exists.txt".asPath.text =
+            s"./target/download-${UniqueIds.next()}/exists.txt".asPath.text =
               "already exists")
           _ <- Download.debug("http://foo", testFile)
           _ <- Task.effect(testFile.getParent.delete())
@@ -56,7 +55,7 @@ object DownloadTest extends DefaultRunnableSpec {
         val url = "https://storage.googleapis.com/mygration/index.txt"
         for {
           testFile <- Task.effect(
-            s"./target/download-${unique.incrementAndGet()}/fileList.txt".asPath)
+            s"./target/download-${UniqueIds.next()}/fileList.txt".asPath)
           _ <- Download.toFile(url, testFile, acceptableStatuses = Set(200))
           content <- Task.effect(testFile.text)
           _ <- Task.effect(testFile.getParent.delete())
@@ -73,7 +72,7 @@ object DownloadTest extends DefaultRunnableSpec {
         val url = "https://storage.googleapis.com/mygration/index.txt"
         for {
           testFile <- Task.effect(
-            s"./target/download-${unique.incrementAndGet()}/fileList.txt".asPath.text =
+            s"./target/download-${UniqueIds.next()}/fileList.txt".asPath.text =
               "foo")
           _ <- Download.toFile(url, testFile, acceptableStatuses = Set(200))
           content <- Task.effect(testFile.text)
@@ -87,7 +86,7 @@ object DownloadTest extends DefaultRunnableSpec {
         val url = "https://storage.googleapis.com/mygration/index.txt"
         for {
           testFile <- Task.effect(
-            s"./target/download-${unique.incrementAndGet()}/fileList.txt".asPath)
+            s"./target/download-${UniqueIds.next()}/fileList.txt".asPath)
           downloadResult <- Download
             .toFile(url, testFile, acceptableStatuses = Set(201))
             .either
@@ -95,7 +94,7 @@ object DownloadTest extends DefaultRunnableSpec {
           _ <- Task.effect(testFile.getParent.delete())
           output <- TestConsole.output
         } yield {
-          assert(output)(equalTo(Vector())) &&
+          assert(output)(equalTo(Vector(s"mkdir -p ${testFile.getParent}"))) &&
           assert(fileExists)(equalTo(false)) &&
           assert(downloadResult.fold(_.getMessage, _.toString))(equalTo(
             s"""Download '$url' returned unexpected status code '200' OK; body:backup-2.zip
