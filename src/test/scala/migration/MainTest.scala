@@ -21,8 +21,18 @@ import zio.{ExitCode, Task}
  */
 object MainTest extends DefaultRunnableSpec {
   def rmdir(nestedDir: Path) = {
-    val testDir = nestedDir.parents.takeWhile(_.fileName != "target").take(3).head
-    zio.console.putStrLn(s"Deleting ${testDir.toAbsolutePath}") *> Task.effect(testDir.delete()).retryN(3).either.unit
+    val testDir = nestedDir.parents.takeWhile(_.fileName != "target").take(3).headOption
+    zio.console.putStrLn(s"Deleting ${testDir.map(_.toAbsolutePath)}") *> Task.effect(testDir.foreach(_.delete())).retryN(3).either.unit
+  }
+
+  private def debug(output: Vector[String]): Unit = {
+    println("v" * 120)
+    output.zipWithIndex.foreach {
+      case (out, i) =>
+        println(s"Output $i: >${out}<")
+    }
+    println("^" * 120)
+
   }
 
   override def spec: ZSpec[_root_.zio.test.environment.TestEnvironment, Any] = {
@@ -43,7 +53,6 @@ object MainTest extends DefaultRunnableSpec {
             s"""Running with
                |               URL : https://storage.googleapis.com/mygration
                |          indexURL : https://storage.googleapis.com/mygration/small-valid.txt
-               |            dryRun : false
                |         directory : ${testDir}
                |  filename pattern : s|AB_CD_([0-9]{3,3})_([0-9]+).xml|$$1:$$0|g
                |""".stripMargin
@@ -72,7 +81,6 @@ object MainTest extends DefaultRunnableSpec {
               s"""Running with
                  |               URL : https://storage.googleapis.com/mygration
                  |          indexURL : https://storage.googleapis.com/mygration/valid.txt
-                 |            dryRun : false
                  |         directory : ${testDir}
                  |  filename pattern : s|this_regex_doesnt_match_([0-9]+).xml|$$1:$$0|g
                  |""".stripMargin
@@ -103,25 +111,19 @@ object MainTest extends DefaultRunnableSpec {
           output <- TestConsole.output
           _ <- rmdir(testDir)
         } yield {
-          println("v" * 120)
-          output.zipWithIndex.foreach {
-            case (out, i) =>
-              println(s"Output $i: >${out}<")
-          }
-          println("^" * 120)
           assert(output)(
             contains(
               s"""Running with
                  |               URL : https://storage.googleapis.com/mygration
                  |          indexURL : https://storage.googleapis.com/mygration/noperms.txt
-                 |            dryRun : false
                  |         directory : ${testDir}
                  |  filename pattern : s|file([0-9]+).xml|$$1.xml|g
                  |""".stripMargin
             )) &&
-            assert(output)(contains("""Extraction failed with requests.RequestFailedException: Request to https://storage.googleapis.com/mygration/noperms.txt failed with status code 403
-                                      |<?xml version='1.0' encoding='UTF-8'?><Error><Code>AccessDenied</Code><Message>Access denied.</Message><Details>Anonymous caller does not have storage.objects.get access to the Google Cloud Storage object.</Details></Error>
-                                      |""".stripMargin)) &&
+            assert(output)(contains(
+              """Extraction failed with requests.RequestFailedException: Request to https://storage.googleapis.com/mygration/noperms.txt failed with status code 403
+                |<?xml version='1.0' encoding='UTF-8'?><Error><Code>AccessDenied</Code><Message>Access denied.</Message><Details>Anonymous caller does not have storage.objects.get access to the Google Cloud Storage object.</Details></Error>
+                |""".stripMargin)) &&
             assert(exitCode)(equalTo(ExitCode.failure))
         }
       },
@@ -148,7 +150,6 @@ object MainTest extends DefaultRunnableSpec {
               s"""Running with
                  |               URL : https://storage.googleapis.com/mygration
                  |          indexURL : https://storage.googleapis.com/mygration/index.txt
-                 |            dryRun : false
                  |         directory : ${testDir}
                  |  filename pattern : s|file([0-9]+).xml|$$1.xml|g
                  |""".stripMargin
@@ -161,21 +162,84 @@ object MainTest extends DefaultRunnableSpec {
             assert(output)(contains(s"# downloading https://storage.googleapis.com/mygration/backup-1.zip to directory ${testDir}/downloads\n")) &&
             assert(output)(contains(s"# downloading https://storage.googleapis.com/mygration/backup-0.zip to directory ${testDir}/downloads\n")) &&
             assert(output)(contains(s"# downloading https://storage.googleapis.com/mygration/backup-3.zip to directory ${testDir}/downloads\n")) &&
-            assert(output)(contains(s"""0001: backup-1.zip failed w/ 1 error(s):
-                                       |	1001.xml : The end-tag for element type "data" must end with a '>' delimiter.
-                                       |
-                                       |""".stripMargin)) &&
-            assert(output)(contains(s"""0001: backup-1.zip failed w/ 1 error(s):
-                                       |	1001.xml : The end-tag for element type "data" must end with a '>' delimiter.
-                                       |
-                                       |""".stripMargin)) &&
-            assert(output)(contains(s"""0002: backup-3.zip failed: Request to https://storage.googleapis.com/mygration/backup-3.zip failed with status code 403
-                                       |<?xml version='1.0' encoding='UTF-8'?><Error><Code>AccessDenied</Code><Message>Access denied.</Message><Details>Anonymous caller does not have storage.objects.get access to the Google Cloud Storage object.</Details></Error>
-                                       |""".stripMargin)) &&
-            assert(output)(contains(s"""0003: backup-0.zip failed w/ 1 error(s):
-                                       |	1001.xml : The end-tag for element type "data" must end with a '>' delimiter.
-                                       |
-                                       |""".stripMargin)) &&
+            assert(output)(contains(
+              s"""0001: backup-1.zip failed w/ 1 error(s):
+                 |	1001.xml : The end-tag for element type "data" must end with a '>' delimiter.
+                 |
+                 |""".stripMargin)) &&
+            assert(output)(contains(
+              s"""0001: backup-1.zip failed w/ 1 error(s):
+                 |	1001.xml : The end-tag for element type "data" must end with a '>' delimiter.
+                 |
+                 |""".stripMargin)) &&
+            assert(output)(contains(
+              s"""0002: backup-3.zip failed: Request to https://storage.googleapis.com/mygration/backup-3.zip failed with status code 403
+                 |<?xml version='1.0' encoding='UTF-8'?><Error><Code>AccessDenied</Code><Message>Access denied.</Message><Details>Anonymous caller does not have storage.objects.get access to the Google Cloud Storage object.</Details></Error>
+                 |""".stripMargin)) &&
+            assert(output)(contains(
+              s"""0003: backup-0.zip failed w/ 1 error(s):
+                 |	1001.xml : The end-tag for element type "data" must end with a '>' delimiter.
+                 |
+                 |""".stripMargin)) &&
+            assert(exitCode)(equalTo(ExitCode.failure))
+        }
+      },
+      testM("report only the failures from mix.txt") {
+        for {
+          testDir <- Task.effect(s"./target/mainTest-${UniqueIds.next()}/foo".asPath)
+          exitCode <- Main.run(
+            List(s"dir=${testDir}",
+              "indexURL=mix.txt",
+              "fileNamePattern=$0.xml",
+              "fileNameRegex=.*[0-9].*"))
+          output <- TestConsole.output
+          _ <- rmdir(testDir)
+        } yield {
+          assert(output)(
+            contains(
+              s"""Running with
+                 |               URL : https://storage.googleapis.com/mygration
+                 |          indexURL : https://storage.googleapis.com/mygration/mix.txt
+                 |         directory : ${testDir}
+                 |  filename pattern : s|.*[0-9].*|$$0.xml|g
+                 |""".stripMargin
+            )) &&
+            assert(output)(contains(s"mkdir -p $testDir/downloads\n")) &&
+            assert(output)(contains(s"# downloading https://storage.googleapis.com/mygration/small-valid.zip to directory $testDir/downloads\n")) &&
+            assert(output)(contains(s"# downloading https://storage.googleapis.com/mygration/invalid.zip to directory $testDir/downloads\n")) &&
+            assert(output)(contains(s"0000: small-valid.zip OK\n")) &&
+            assert(output)(contains(
+              s"""0001: invalid.zip failed: 'bad_file_name.xml' didn't match .*[0-9].*
+                 |""".stripMargin)) &&
+            assert(exitCode)(equalTo(ExitCode.failure))
+        }
+      },
+      testM("show=? should just display the config") {
+        for {
+          testDir <- Task.effect(s"./target/mainTest-${UniqueIds.next()}/foo".asPath)
+          exitCode <- Main.run(
+            List(s"dir=${testDir}",
+              "fileNamePattern=$1.xml",
+              "show=fileNamePattern"))
+          output <- TestConsole.output
+          _ <- rmdir(testDir)
+        } yield {
+          assert(output)(contains(s"""fileNamePattern : $$1.xml # command-line\n""")) &&
+            assert(testDir.exists())(equalTo(false)) &&
+            assert(exitCode)(equalTo(ExitCode.success))
+        }
+      },
+      testM("fail when trying to extract when a file is the parent") {
+        for {
+          testDir <- Task.effect(s"./target/imAFile${UniqueIds.next()}.file".asPath.text = "I'm a file, actually")
+          exitCode <- Main.run(List(s"dir=${testDir}"))
+          output <- TestConsole.output
+          _ <- rmdir(testDir)
+        } yield {
+          locally {
+            debug(output)
+          }
+          assert(output)(exists(containsString("""Not a directory"""))) &&
             assert(exitCode)(equalTo(ExitCode.failure))
         }
       }

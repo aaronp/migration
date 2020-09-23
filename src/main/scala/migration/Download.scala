@@ -38,15 +38,6 @@ object Download {
       .map(_ => dest)
   }
 
-  def debug(url: String, dest: Path) = {
-    for {
-      actions <- plan(Download(url, dest, Set.empty))
-      _ <- ZIO.foreach(actions) { action =>
-        dryRun(action)
-      }
-    } yield ()
-  }
-
   private sealed trait Action
 
   private case class MkDir(dest: Path) extends Action
@@ -68,16 +59,6 @@ object Download {
         putStrLn(s"download failed with: ${error.msg}") *> Task.fail(error)
       case Log(msg)                     => zio.console.putStrLn(msg)
       case download @ Download(_, _, _) => asTask(download)
-    }
-
-  private def dryRun(action: Action): ZIO[Console, Throwable, Any] =
-    action match {
-      case MkDir(dir) => putStrLn(s"mkdir -p ${dir}")
-      case Fail(msg)  => putStrLn(s"echo '${msg}' && exit 1")
-      case Log(msg)   => putStrLn(msg)
-      case Download(url, dest, ok) =>
-        putStrLn(
-          s"curl -o ${dest} $url && checkStatusIn ${ok.mkString("[", ",", "]")}")
     }
 
   private def write(data: Bytes, dest: Path): Task[Path] = {
@@ -109,7 +90,6 @@ object Download {
     * @return a list of actions to perform for a given download
     */
   private def plan(download: Download): Task[Seq[Action]] = {
-    //    def download: Download = Download(url, dest, acceptableStatuses)
     import download._
     Task.effect {
       if (dest.exists()) {
@@ -122,9 +102,10 @@ object Download {
         dest.parent match {
           case Some(p) if p.isDir =>
             Log(s"# downloading $url to directory $p") :: download :: Nil
-          case Some(p) => MkDir(p) :: download :: Nil
-          case None =>
-            Fail(s"$dest cannot be at the root of the file system") :: Nil
+          case Some(p) if p.isFile =>
+            Fail(s"${dest} exists but is a file") :: Nil
+          case Some(p) if !p.exists() => MkDir(p) :: download :: Nil
+          case _                      => Fail(s"$dest is an invalid download path") :: Nil
         }
       }
     }

@@ -12,7 +12,6 @@ class ParsedConfig(config: Config) {
   val baseDirectory = config.getString("dir").asPath
   val dataDirectory = baseDirectory.resolve("data")
   val downloadDirectory = baseDirectory.resolve("downloads")
-  val dryRun = config.getBoolean("dryRun")
   val checkDownloadStatus = config
     .asList("checkDownloadStatus")
     .toSet
@@ -36,7 +35,6 @@ class ParsedConfig(config: Config) {
   override def toString: String = {
     s"""               URL : $url
        |          indexURL : $indexURL
-       |            dryRun : $dryRun
        |         directory : $baseDirectory
        |  filename pattern : s|$fileNameRegex|$fileNamePattern|g""".stripMargin
   }

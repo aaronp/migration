@@ -9,7 +9,7 @@ object Main extends zio.App {
     val config = args.toArray.asConfig()
     val appIO = config.showIfSpecified() match {
       case None        => apply(ParsedConfig(config))
-      case Some(value) => ZIO.effect(println(value))
+      case Some(value) => zio.console.putStrLn(value)
     }
 
     appIO.either.map {
@@ -18,16 +18,10 @@ object Main extends zio.App {
     }
   }
 
-  def debug(config: ParsedConfig) = {
-    import config._
-    Download.debug(indexURL, downloadDirectory)
-  }
-
   def apply(config: ParsedConfig) = {
-    import config._
     for {
       _ <- zio.console.putStrLn(s"""Running with\n$config""")
-      _ <- if (dryRun) debug(config) else Extract(config)
+      _ <- Extract(config)
     } yield ()
   }
 }
