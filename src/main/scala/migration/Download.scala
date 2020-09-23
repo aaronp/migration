@@ -4,7 +4,7 @@ import java.nio.file.Path
 
 import eie.io._
 import geny.Bytes
-import zio.console.{Console, putStr}
+import zio.console.{Console, putStrLn}
 import zio.{Task, ZIO}
 
 import scala.util.Try
@@ -62,22 +62,20 @@ object Download {
 
   private def eval(action: Action): ZIO[Console, Throwable, Any] =
     action match {
-      case MkDir(dir) =>
-        zio.console.putStr(s"mkdir -p ${dir}") *> Task.effect(dir.mkDirs())
+      case MkDir(dir) => putStrLn(s"mkdir -p ${dir}") *> Task.effect(dir.mkDirs())
       case error @ Fail(_) =>
-        zio.console.putStr(s"download failed with: ${error.msg}") *> Task.fail(
-          error)
-      case Log(msg)                     => zio.console.putStr(msg)
+        putStrLn(s"download failed with: ${error.msg}") *> Task.fail(error)
+      case Log(msg)                     => zio.console.putStrLn(msg)
       case download @ Download(_, _, _) => asTask(download)
     }
 
   private def dryRun(action: Action): ZIO[Console, Throwable, Any] =
     action match {
-      case MkDir(dir) => putStr(s"mkdir -p ${dir}")
-      case Fail(msg)  => putStr(s"echo '${msg}' && exit 1")
-      case Log(msg)   => putStr(msg)
+      case MkDir(dir) => putStrLn(s"mkdir -p ${dir}")
+      case Fail(msg)  => putStrLn(s"echo '${msg}' && exit 1")
+      case Log(msg)   => putStrLn(msg)
       case Download(url, dest, ok) =>
-        putStr(
+        putStrLn(
           s"curl -o ${dest} $url && checkStatusIn ${ok.mkString("[", ",", "]")}")
     }
 

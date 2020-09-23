@@ -26,7 +26,7 @@ object Main extends zio.App {
   def apply(config: ParsedConfig) = {
     import config._
     for {
-      _ <- zio.console.putStr(s"""Running with\n$config""")
+      _ <- zio.console.putStrLn(s"""Running with\n$config""")
       _ <- if (dryRun) debug(config) else Extract(config)
     } yield ()
   }
