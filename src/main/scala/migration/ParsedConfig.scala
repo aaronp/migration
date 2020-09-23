@@ -17,8 +17,10 @@ class ParsedConfig(config: Config) {
     .filterNot(_.trim.isEmpty)
     .map(_.toInt)
   val indexURL = config.getString("indexURL") match {
-    case "/index.txt" =>
-      if (url.endsWith("/")) s"${url}index.txt" else s"$url/index.txt"
+    case name if !name.contains("/") =>
+      if (url.endsWith("/")) s"${url}$name" else s"$url/$name"
+    case name if name.startsWith("/") =>
+      if (url.endsWith("/")) s"${url}${name.tail}" else s"$url$name"
     case url => url
   }
 
