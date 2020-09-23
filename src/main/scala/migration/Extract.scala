@@ -110,7 +110,6 @@ object Extract {
     }
 
     for {
-      _ <- putStrLn(s"# Downloading entry #$index : $zipUrl")
       zipFile <- Download.toFile(zipUrl,
         downloadDirectory.resolve(zipFileName),
         acceptableStatusCodes)

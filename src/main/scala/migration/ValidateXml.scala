@@ -22,13 +22,10 @@ object ValidateXml {
           }
           .fork
       }
-      lintErrors: Seq[Option[(Path, String)]] <- Task.foreach(lintErrorsFork) {
-        fiber =>
-          fiber.join
-      }
+      lintErrors: Seq[Option[(Path, String)]] <- Task.foreach(lintErrorsFork)(_.join)
     } yield {
       lintErrors.collect {
-        case Some((path, msg)) => s"$path : $msg"
+        case Some((path, msg)) => s"${dataDir.relativize(path)} : $msg"
       }
     }
   }
