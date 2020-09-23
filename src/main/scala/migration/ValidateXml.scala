@@ -2,10 +2,10 @@ package migration
 
 import java.nio.file.Path
 
+import eie.io._
 import zio.{Task, ZIO}
 
 import scala.xml.XML
-import eie.io._
 
 object ValidateXml {
 
@@ -17,12 +17,8 @@ object ValidateXml {
           .effect(XML.loadFile(file.toFile))
           .either
           .map {
-            case Left(err) =>
-              println(s"${Thread.currentThread().getName} : $file is fucked")
-              Some(file -> err.getMessage)
-            case _ =>
-//            println(s"${Thread.currentThread().getName} : $file ok")
-              None
+            case Left(err) => Some(file -> err.getMessage)
+            case _ => None
           }
           .fork
       }
