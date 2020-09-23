@@ -12,17 +12,14 @@ class ParsedConfigTest extends AnyWordSpec with Matchers {
 
   "ParsedConfig.indexUrl" should {
     "take into account the slash ending of the url param" in {
-      ParsedConfig(conf(
-        """url : "http://foo"
-          |indexUrl : "index.text
+      ParsedConfig(conf("""url : "http://foo"
+          |indexURL : "index.text"
           |""".stripMargin)).indexURL shouldBe "http://foo/index.text"
-      ParsedConfig(conf(
-        """url : "http://foo/"
-          |indexUrl : "/index.text
+      ParsedConfig(conf("""url : "http://foo/"
+          |indexURL : "/index.text"
           |""".stripMargin)).indexURL shouldBe "http://foo/index.text"
-      ParsedConfig(conf(
-        """url : "http://foo/"
-          |indexUrl : "index.text
+      ParsedConfig(conf("""url : "http://foo/"
+          |indexURL : "index.text"
           |""".stripMargin)).indexURL shouldBe "http://foo/index.text"
     }
   }
