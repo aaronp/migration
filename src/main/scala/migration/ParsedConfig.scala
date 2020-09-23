@@ -29,7 +29,7 @@ class ParsedConfig(config: Config) {
        |          indexURL : $indexURL
        |            dryRun : $dryRun
        |         directory : $targetDirectory
-       |  filename pattern : s/$fileNameRegex/$fileNamePattern/g""".stripMargin
+       |  filename pattern : s|$fileNameRegex|$fileNamePattern|g""".stripMargin
   }
 }
 

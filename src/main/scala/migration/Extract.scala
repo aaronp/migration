@@ -23,45 +23,46 @@ object Extract {
       val paddedIndex = index.toString.reverse.padTo(4, '0').reverse
       Task.fromTry(
         Unzip.to(zipFile,
-          targetDirectory
-            .resolve("data")
-            .resolve(s"${paddedIndex}-$zipFileName")
-            .mkDirs())(fileNameForEntry))
+                 targetDirectory
+                   .resolve("data")
+                   .resolve(s"${paddedIndex}-$zipFileName")
+                   .mkDirs())(fileNameForEntry))
     }
 
     for {
       zipFile <- Download.toFile(zipUrl,
-        targetDirectory.resolve(zipFileName),
-        acceptableStatusCodes)
+                                 targetDirectory.resolve(zipFileName),
+                                 acceptableStatusCodes)
       dataDir <- unzip(zipFile)
       errorMessages <- ValidateXml(dataDir)
     } yield UnzipResult(zipFile, dataDir, errorMessages)
   }
 
   /**
-   * The 'actually do this' application
-   *
-   * @param config
-   * @return
-   */
+    * The 'actually do this' application
+    *
+    * @param config
+    * @return
+    */
   def apply(config: ParsedConfig) = {
     import config._
     val fileNameForEntry = {
       // throw exceptions for bad regex replacements
-      RegexResolve(config.fileNameRegex.trim, config.fileNamePattern.trim).andThen(_.get)
+      RegexResolve(config.fileNameRegex.trim, config.fileNamePattern.trim)
+        .andThen(_.get)
     }
 
     for {
       zipFilesNames <- Download.indexFile(indexURL,
-        targetDirectory.resolve("index.txt"))
+                                          targetDirectory.resolve("index.txt"))
       forks <- ZIO.foreach(zipFilesNames.zipWithIndex) {
         case (zipEntry, index) =>
           process(config.url,
-            targetDirectory,
-            index,
-            zipEntry,
-            checkDownloadStatus,
-            fileNameForEntry).fork
+                  targetDirectory,
+                  index,
+                  zipEntry,
+                  checkDownloadStatus,
+                  fileNameForEntry).fork
       }
       _ <- ZIO.foreach(forks.map(_.join))(identity)
     } yield ()

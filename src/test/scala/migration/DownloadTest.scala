@@ -26,8 +26,7 @@ object DownloadTest extends DefaultRunnableSpec {
       },
       testM("dry run: only download if the parent directory already exists") {
         for {
-          dirName <- Task.effect(
-            s"./target/download-${UniqueIds.next()}")
+          dirName <- Task.effect(s"./target/download-${UniqueIds.next()}")
           testDir <- Task.effect(dirName.asPath.mkDirs().resolve("test.txt"))
           _ <- Download.debug("http://foo", testDir)
           _ <- Task.effect(testDir.getParent.delete())

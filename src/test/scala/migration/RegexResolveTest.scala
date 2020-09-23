@@ -40,19 +40,28 @@ class RegexResolveTest extends AnyWordSpec with Matchers {
   "RegexResolve.apply" should {
     "replace $0 references with the whole text" in {
       val resolver = RegexResolve(".*/?ABC_([0-9]{9,9})_[0-9]+\\.xml", "$1:$0")
-      resolver("ABC_123456789_987654321.xml") shouldBe Success("123456789:ABC_123456789_987654321")
-      resolver("/path/to/file/ABC_123456789_987654321.xml") shouldBe Success("123456789:ABC_123456789_987654321")
-      resolver("./file/ABC_123456789_987654321.xml") shouldBe Success("123456789:ABC_123456789_987654321")
-      resolver("/ABC_123456789_987654321.xml") shouldBe Success("123456789:ABC_123456789_987654321")
-      resolver("ABC_12345678_987654321.xml").toEither.swap.map(_.getMessage) shouldBe Right("'ABC_12345678_987654321.xml' didn't match .*/?ABC_([0-9]{9,9})_[0-9]+\\.xml")
+      resolver("ABC_123456789_987654321.xml") shouldBe Success(
+        "123456789:ABC_123456789_987654321")
+      resolver("/path/to/file/ABC_123456789_987654321.xml") shouldBe Success(
+        "123456789:ABC_123456789_987654321")
+      resolver("./file/ABC_123456789_987654321.xml") shouldBe Success(
+        "123456789:ABC_123456789_987654321")
+      resolver("/ABC_123456789_987654321.xml") shouldBe Success(
+        "123456789:ABC_123456789_987654321")
+      resolver("ABC_12345678_987654321.xml").toEither.swap
+        .map(_.getMessage) shouldBe Right(
+        "'ABC_12345678_987654321.xml' didn't match .*/?ABC_([0-9]{9,9})_[0-9]+\\.xml")
     }
     "replace text in a string" in {
       val resolver = RegexResolve("foo([0-9]{2,3}).(.)\\.txt", "$2 after $1")
       resolver("foo12XY.txt") shouldBe Success("Y after 12")
       resolver("foo124ab.txt") shouldBe Success("b after 124")
-      resolver("foo124ab.tx").toEither.swap.map(_.getMessage) shouldBe Right("'foo124ab.tx' didn't match foo([0-9]{2,3}).(.)\\.txt")
-      resolver("bar124ab.txt").toEither.swap.map(_.getMessage) shouldBe Right("'bar124ab.txt' didn't match foo([0-9]{2,3}).(.)\\.txt")
-      resolver("foo1_3ab.txt").toEither.swap.map(_.getMessage) shouldBe Right("'foo1_3ab.txt' didn't match foo([0-9]{2,3}).(.)\\.txt")
+      resolver("foo124ab.tx").toEither.swap.map(_.getMessage) shouldBe Right(
+        "'foo124ab.tx' didn't match foo([0-9]{2,3}).(.)\\.txt")
+      resolver("bar124ab.txt").toEither.swap.map(_.getMessage) shouldBe Right(
+        "'bar124ab.txt' didn't match foo([0-9]{2,3}).(.)\\.txt")
+      resolver("foo1_3ab.txt").toEither.swap.map(_.getMessage) shouldBe Right(
+        "'foo1_3ab.txt' didn't match foo([0-9]{2,3}).(.)\\.txt")
     }
   }
 }

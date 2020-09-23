@@ -42,7 +42,10 @@ object GenXML extends zio.App {
     val dir = "target-zip".asPath.mkDirs()
     def next() = Random.nextInt(100000000).toString.padTo(9, '0')
     val nr = (0 to 20).count { i =>
-      dir.resolve(s"AB_CD_${i.toString.reverse.padTo(3, '0').reverse}_${next()}.xml").text = xml().toString
+      dir
+        .resolve(
+          s"AB_CD_${i.toString.reverse.padTo(3, '0').reverse}_${next()}.xml")
+        .text = xml().toString
       true
     }
 //    dir.resolve(s"file${nr}.xml").text = invalid
