@@ -27,7 +27,7 @@ object Extract {
     def success: Boolean = result.fold(_ => false, _.errorMessages.isEmpty)
 
     def desc: String = result match {
-      case Left(err) => s"${header} threw $err"
+      case Left(err) => s"${header} failed: ${err.getMessage}"
       case Right(result) => s"${header} ${result.desc}"
     }
   }

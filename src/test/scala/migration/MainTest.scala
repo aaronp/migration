@@ -22,14 +22,16 @@ object MainTest extends DefaultRunnableSpec {
     suite("Main")(testM(
       "report failed downloads") {
       for {
-        testDir <- Task.effect(s"./target/mainTest-${UniqueIds.next()}/data".asPath)
+        testDir <- Task.effect(s"./target/mainTest-${UniqueIds.next()}/foo".asPath)
         exitCode <- Main.run(
           List(s"dir=${testDir}",
             "indexURL=small-valid.txt",
-            "fileNamePattern=$2_$0",
-            "fileNameRegex=file(.+)\\.xml"))
+            "fileNamePattern=$1:$0",
+            "fileNameRegex=AB_CD_([0-9]{3,3})_([0-9]+).xml"))
         //          _ <- Task.effect(testDir.delete())
         output <- TestConsole.output
+        extractedFileCount <- Task.effect(testDir.resolve("data/0000-small-valid.zip").children.filter(_.isFile).count(_.fileName.matches("[0-9][0-9][0-9]:AB_CD_.*")))
+        //_ <- Task.effect(testDir.getParent.getParent.delete())
       } yield {
         println("v" * 120)
         output.foreach(println)
@@ -41,15 +43,13 @@ object MainTest extends DefaultRunnableSpec {
                |          indexURL : https://storage.googleapis.com/mygration/small-valid.txt
                |            dryRun : false
                |         directory : ${testDir}
-               |  filename pattern : s|file(.+)\\.xml|$$2_$$0|g
+               |  filename pattern : s|AB_CD_([0-9]{3,3})_([0-9]+).xml|$$1:$$0|g
                |""".stripMargin
           )) &&
           assert(output)(contains(s"mkdir -p $testDir\n")) &&
+          assert(extractedFileCount)(equalTo(21)) &&
           assert(output)(contains(s"# downloading https://storage.googleapis.com/mygration/small-valid.zip to directory ${testDir}\n")) &&
-          //          assert(output)(contains(s"# downloading https://storage.googleapis.com/mygration/backup-0.zip to directory ${testDir}")) &&
-          //          assert(output)(contains(s"# downloading https://storage.googleapis.com/mygration/backup-3.zip to directory ${testDir}")) &&
-          //          assert(output)(contains(s"# downloading https://storage.googleapis.com/mygration/backup-1.zip to directory ${testDir}")) &&
-          assert(exitCode)(equalTo(ExitCode.failure))
+          assert(exitCode)(equalTo(ExitCode.success))
       }
     })
   }
