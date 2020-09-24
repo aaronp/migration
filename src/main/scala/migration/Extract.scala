@@ -80,7 +80,8 @@ object Extract {
     for {
       zipFilesNames <- Download.indexFile(
         indexURL,
-        downloadDirectory.resolve(indexFileName))
+        downloadDirectory.resolve(indexFileName),
+        httpSettings)
       forks <- ZIO.foreach(zipFilesNames.zipWithIndex) {
         case (zipEntry, index) =>
           val forked: URIO[
@@ -91,7 +92,7 @@ object Extract {
                                     dataDirectory,
                                     index,
                                     zipEntry,
-                                    checkDownloadStatus,
+                                    httpSettings,
                                     fileNameForEntry).either.fork
 
           forked.map(fiber => (zipEntry, index, fiber))
@@ -111,7 +112,7 @@ object Extract {
       dataDirectory: Path,
       index: Int,
       zipFileName: String,
-      acceptableStatusCodes: Set[Int],
+      settings : HttpRequestSettings,
       fileNameForEntry: String => Try[String]) = {
     zio.console.putStr(s"Processing $index: $url into $dataDirectory ")
     val zipUrl =
@@ -129,7 +130,7 @@ object Extract {
     for {
       zipFile <- Download.toFile(zipUrl,
                                  downloadDirectory.resolve(zipFileName),
-                                 acceptableStatusCodes)
+                                 settings)
       dataDir <- unzip(zipFile)
       errorMessages <- ValidateXml(dataDir)
     } yield ValidationResult(zipFile, errorMessages)

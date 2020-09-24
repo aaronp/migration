@@ -12,11 +12,15 @@ class ParsedConfig(config: Config) {
   val baseDirectory = config.getString("dir").asPath
   val dataDirectory = baseDirectory.resolve("data")
   val downloadDirectory = baseDirectory.resolve("downloads")
-  val checkDownloadStatus = config
-    .asList("checkDownloadStatus")
-    .toSet
-    .filterNot(_.trim.isEmpty)
-    .map(_.toInt)
+  val httpSettings = HttpRequestSettings(
+    readTimeout = config.asFiniteDuration("readTimeout"),
+    connectionTimeout = config.asFiniteDuration("connectionTimeout"),
+    acceptableStatuses = config
+      .asList("checkDownloadStatus")
+      .toSet
+      .filterNot(_.trim.isEmpty)
+      .map(_.toInt)
+  )
   val indexURL = config.getString("indexURL") match {
     case name if !name.contains("/") =>
       if (url.endsWith("/")) s"${url}$name" else s"$url/$name"
