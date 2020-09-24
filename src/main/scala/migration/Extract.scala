@@ -112,7 +112,7 @@ object Extract {
       dataDirectory: Path,
       index: Int,
       zipFileName: String,
-      settings : HttpRequestSettings,
+      settings: HttpRequestSettings,
       fileNameForEntry: String => Try[String]) = {
     zio.console.putStr(s"Processing $index: $url into $dataDirectory ")
     val zipUrl =

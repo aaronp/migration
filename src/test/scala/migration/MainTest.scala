@@ -25,7 +25,7 @@ object MainTest extends DefaultRunnableSpec {
     zio.console.putStrLn(s"Deleting ${testDir.map(_.toAbsolutePath)}") *> Task.effect(testDir.foreach(_.delete())).retryN(3).either.unit
   }
 
-  private def debug(output: Vector[String]): Unit = {
+  def debug(output: Vector[String]): Unit = {
     println("v" * 120)
     output.zipWithIndex.foreach {
       case (out, i) =>

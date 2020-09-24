@@ -12,16 +12,16 @@ import scala.util.Try
 object Download {
 
   /**
-   *
-   * @param url      the index list URL (a url containing a plain text, newline separated list of files to download
-   * @param dest     the target directory
-   * @param settings the http settings
-   * @return a list of file names from the given url
-   */
-  def indexFile(url: String,
-                dest: Path,
-                settings: HttpRequestSettings)
-  : ZIO[Console, Throwable, List[String]] = {
+    *
+    * @param url      the index list URL (a url containing a plain text, newline separated list of files to download
+    * @param dest     the target directory
+    * @param settings the http settings
+    * @return a list of file names from the given url
+    */
+  def indexFile(
+      url: String,
+      dest: Path,
+      settings: HttpRequestSettings): ZIO[Console, Throwable, List[String]] = {
     for {
       _ <- toFile(url, dest, settings)
       fileList <- Task.effect(
@@ -29,8 +29,9 @@ object Download {
     } yield fileList
   }
 
-  def toFile(url: String, dest: Path, settings: HttpRequestSettings)
-  : ZIO[Console, Throwable, Path] = {
+  def toFile(url: String,
+             dest: Path,
+             settings: HttpRequestSettings): ZIO[Console, Throwable, Path] = {
     plan(Download(url, dest, settings))
       .flatMap { actions =>
         ZIO.foreach(actions)(eval)
@@ -44,7 +45,8 @@ object Download {
 
   private case class Download(url: String,
                               dest: Path,
-                              settings: HttpRequestSettings) extends Action
+                              settings: HttpRequestSettings)
+      extends Action
 
   private case class Log(message: String) extends Action
 
@@ -54,10 +56,10 @@ object Download {
     action match {
       case MkDir(dir) =>
         putStrLn(s"mkdir -p ${dir}") *> Task.effect(dir.mkDirs())
-      case error@Fail(_) =>
+      case error @ Fail(_) =>
         putStrLn(s"download failed with: ${error.msg}") *> Task.fail(error)
-      case Log(msg) => zio.console.putStrLn(msg)
-      case download@Download(_, _, _) => asTask(download)
+      case Log(msg)                     => zio.console.putStrLn(msg)
+      case download @ Download(_, _, _) => asTask(download)
     }
 
   private def write(data: Bytes, dest: Path): Task[Path] = {
@@ -71,31 +73,35 @@ object Download {
 
   private def asTask(download: Download): ZIO[Any, Throwable, Path] = {
     import download._
-    Task.effect(requests.get(url,
-      readTimeout = settings.readTimeout.toMillis.toInt,
-      connectTimeout = settings.connectionTimeout.toMillis.toInt
-    )).flatMap { r =>
-      if (settings.acceptableStatuses.isEmpty || settings.acceptableStatuses.contains(
-        r.statusCode)) {
-        write(r.data, dest)
-      } else {
-        val body = Try("; body:" + new String(r.bytes).take(200)).getOrElse("")
-        val err = new IllegalStateException(
-          s"Download '$url' returned unexpected status code '${r.statusCode}' ${r.statusMessage}${body}")
-        Task.fail(err)
+    Task
+      .effect(
+        requests.get(
+          url,
+          readTimeout = settings.readTimeout.toMillis.toInt,
+          connectTimeout = settings.connectionTimeout.toMillis.toInt))
+      .flatMap { r =>
+        if (settings.acceptableStatuses.isEmpty || settings.acceptableStatuses
+              .contains(r.statusCode)) {
+          write(r.data, dest)
+        } else {
+          val body =
+            Try("; body:" + new String(r.bytes).take(200)).getOrElse("")
+          val err = new IllegalStateException(
+            s"Download '$url' returned unexpected status code '${r.statusCode}' ${r.statusMessage}${body}")
+          Task.fail(err)
+        }
       }
-    }
   }
 
   /**
-   * This was initially done this way to produce a list of actions which could
-   * then just be evaluated by doing actual IO or just logging for a 'dry run' scenario.
-   *
-   * In practice doing a 'dry run' on downloads was as useful as the number 9 on a microwave.
-   *
-   * @param download the download to download. Download.
-   * @return a list of actions to perform for a given download
-   */
+    * This was initially done this way to produce a list of actions which could
+    * then just be evaluated by doing actual IO or just logging for a 'dry run' scenario.
+    *
+    * In practice doing a 'dry run' on downloads was as useful as the number 9 on a microwave.
+    *
+    * @param download the download to download. Download.
+    * @return a list of actions to perform for a given download
+    */
   private def plan(download: Download): Task[Seq[Action]] = {
     import download._
     Task.effect {
@@ -112,7 +118,7 @@ object Download {
           case Some(p) if p.isFile =>
             Fail(s"${dest} exists but is a file") :: Nil
           case Some(p) if !p.exists() => MkDir(p) :: download :: Nil
-          case _ => Fail(s"$dest is an invalid download path") :: Nil
+          case _                      => Fail(s"$dest is an invalid download path") :: Nil
         }
       }
     }
