@@ -5,7 +5,6 @@ import xpaths.XPaths.XPath
 import scala.xml.Node
 
 case class XPaths(byPath: Map[XPath, Node]) {
-
   override def toString: String = {
     sorted.map {
       case (key, value) => s"$key : $value"
@@ -25,15 +24,10 @@ case class XPaths(byPath: Map[XPath, Node]) {
         }
     }
   }
-
-  def verbose: String = {
-    byPath.map {
-      case (path, node) => s"$path: [${node.xmlType()}] ${node.getClass.getSimpleName} >${node.text}< atts:${node.attributes}"
-    }.mkString("\n")
-  }
 }
 
 object XPaths {
+
   case class XPath(hierarchy: List[PathElm]) extends Ordered[XPath] {
     override def toString: String = hierarchy.mkString(".")
 
@@ -110,8 +104,9 @@ object XPaths {
       childrenByKey.flatMap {
         case (label, Seq(only)) => forNode((label, only), path)
         case (label, many) =>
+          val size = many.size
           many.zipWithIndex.flatMap {
-            case (child, i) => forNode((ArrayElm(label, i), child), path)
+            case (child, i) => forNode((ArrayElm(label, size - i - 1), child), path)
           }
       }
     }
