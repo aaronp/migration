@@ -1,13 +1,14 @@
 package migration
 
 import args4c.implicits._
+import zio.console.Console
 import zio.{ExitCode, URIO, ZIO}
 
 object Main extends zio.App {
 
   override def run(args: List[String]): URIO[zio.ZEnv, ExitCode] = {
     val config = args.toArray.asConfig().resolve()
-    val appIO = config.showIfSpecified() match {
+    val appIO: ZIO[Console, Throwable, Unit] = config.showIfSpecified() match {
       case None        => apply(ParsedConfig(config))
       case Some(value) => zio.console.putStrLn(value)
     }
